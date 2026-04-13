@@ -1,2 +1,2 @@
-# SAFETY-NAVIGATION-SYSTEM
-VAJRA-an intelligent safety navigation system
+# VAJRA-an intelligent safety navigation system
+
