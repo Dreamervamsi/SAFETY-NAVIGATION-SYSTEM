@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet, Pressable, Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ScoredRoute } from '../Map/RouteMap';
 import RouteCard from './RouteCard';
 import { useEffect, useState, useRef } from 'react';
@@ -39,8 +40,10 @@ export default function RouteList({ routes }: RouteListProps) {
                 const googleMapsLink = `https://maps.google.com/?q=${latitude},${longitude}`;
                 const messageBody = `🚨 EMERGENCY SOS! 🚨\nI need help! My current location is:\n${googleMapsLink}`;
 
-                // Note: The user will need to manually enter the contact or we'd need a contacts picker
-                const { result } = await SMS.sendSMSAsync([], messageBody);
+                const savedPhone = await AsyncStorage.getItem('@emergency_contact_phone');
+                const recipients = savedPhone ? [savedPhone] : [];
+
+                const { result } = await SMS.sendSMSAsync(recipients, messageBody);
 
                 if (result === 'sent') {
                     Alert.alert('SOS SENT', 'Emergency message draft opened with your GPS location.');

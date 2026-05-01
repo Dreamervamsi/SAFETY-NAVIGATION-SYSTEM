@@ -1,17 +1,28 @@
 import os
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, UploadFile, File
+import httpx
 from groq import Groq
 import tempfile
 
 
 load_dotenv()
 
+from fastapi.middleware.cors import CORSMiddleware
+
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 OSRM_URL = "https://router.project-osrm.org/route/v1/driving/"
 OVERPASS_URL = "https://overpass-api.de/api/interpreter"
-GROQ_API_KEY = os.getenv("GROQ_API_KEY", "gsk_...") # Replace with actual key or use .env
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 client_groq = Groq(api_key=GROQ_API_KEY)
 
@@ -179,7 +190,7 @@ async def process_fake_call(file: UploadFile = File(...)):
                     "content": transcription
                 }
             ],
-            model="llama-3.1-70b-versatile",
+            model="llama-3.3-70b-versatile",
         )
         
         ai_response = chat_completion.choices[0].message.content

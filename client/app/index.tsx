@@ -9,6 +9,9 @@ import RouteList from '../components/RouteInfo/RouteList';
 import FakeCallManager, { FakeCallManagerHandle } from '../components/FakeCall/FakeCallManager';
 import { Pressable, Text } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import EmergencyContactModal from '../components/ui/EmergencyContactModal';
+import { API_URL } from '../constants/Config';
 
 type Coord = {
     latitude: number,
@@ -22,9 +25,23 @@ export default function App() {
     const [destination, setDestination] = useState<string>('');
     const [routes, setRoutes] = useState<ScoredRoute[]>([]);
     const [loading, setLoading] = useState(false);
+    const [isContactModalVisible, setIsContactModalVisible] = useState(false);
+    const [emergencyContact, setEmergencyContact] = useState<string | null>(null);
 
     const mapRef = useRef<MapView>(null);
     const fakeCallRef = useRef<FakeCallManagerHandle>(null);
+
+    useEffect(() => {
+        const checkEmergencyContact = async () => {
+            const savedPhone = await AsyncStorage.getItem('@emergency_contact_phone');
+            if (!savedPhone) {
+                setIsContactModalVisible(true);
+            } else {
+                setEmergencyContact(savedPhone);
+            }
+        };
+        checkEmergencyContact();
+    }, []);
 
     const getCoordinates = async (place: string): Promise<Coord | undefined> => {
         try {
@@ -110,7 +127,7 @@ export default function App() {
                 const startStr = `${sCoord.longitude},${sCoord.latitude}`;
                 const destStr = `${dCoord.longitude},${dCoord.latitude}`;
 
-                const backendUrl = `http://192.168.236.27:8000/score-route?start_coords=${startStr}&end_coords=${destStr}`;
+                const backendUrl = `${API_URL}/score-route?start_coords=${startStr}&end_coords=${destStr}`;
 
                 const res = await fetch(backendUrl);
 
@@ -187,6 +204,13 @@ export default function App() {
                 onUseCurrentLocation={handleUseCurrentLocation}
             />
 
+            <Pressable
+                style={styles.settingsBtn}
+                onPress={() => setIsContactModalVisible(true)}
+            >
+                <MaterialCommunityIcons name="account-cog" size={24} color="#6366f1" />
+            </Pressable>
+
             <View style={styles.mapContainer}>
                 <RouteMap
                     mapRef={mapRef}
@@ -208,7 +232,13 @@ export default function App() {
 
                 <FakeCallManager
                     ref={fakeCallRef}
-                    backendUrl="http://192.168.236.27:8000" // Replace with your actual local IP
+                    backendUrl={API_URL}
+                />
+
+                <EmergencyContactModal
+                    visible={isContactModalVisible}
+                    onClose={() => setIsContactModalVisible(false)}
+                    onSave={(phone) => setEmergencyContact(phone)}
                 />
             </View>
 
@@ -266,5 +296,22 @@ const styles = StyleSheet.create({
         shadowRadius: 8,
         elevation: 10,
         zIndex: 40,
+    },
+    settingsBtn: {
+        position: 'absolute',
+        top: 60,
+        right: 25,
+        backgroundColor: 'white',
+        width: 45,
+        height: 45,
+        borderRadius: 22.5,
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 5,
+        zIndex: 100,
     }
-})
+});

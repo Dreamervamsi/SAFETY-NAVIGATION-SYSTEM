@@ -51,12 +51,21 @@ export default function ActiveCallUI({ callerName, onEndCall, backendUrl }: Acti
   };
 
   const startRecording = async () => {
+    if (isRecording || isProcessing) return;
+
     try {
       await Audio.requestPermissionsAsync();
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
         playsInSilentModeIOS: true,
       });
+
+      if (recordingRef.current) {
+        try {
+          await recordingRef.current.stopAndUnloadAsync();
+        } catch (e) {}
+        recordingRef.current = null;
+      }
 
       const { recording } = await Audio.Recording.createAsync(
         Audio.RecordingOptionsPresets.HIGH_QUALITY
